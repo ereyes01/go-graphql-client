@@ -1,0 +1,5 @@
+github.com/ereyes01/go-auth0-grant v1.0.0 h1:em6O/fGC+PnSO15AZgaNKzIhgJOE9HIJvFB/qStXzZM=
+github.com/ereyes01/go-auth0-grant v1.0.0/go.mod h1:M/5tAbi3kPufaqS4QFtZsCdnhipAuhLaXlf1B3hHrcs=
+github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
+github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
+github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
