@@ -8,6 +8,7 @@ type GraphqlErrLoc struct {
 }
 
 type GraphqlError struct {
+	Status    int             `json:"status"`
 	Message   string          `json:"message"`
 	Locations []GraphqlErrLoc `json:"locations"`
 }
@@ -23,9 +24,9 @@ func (e GraphqlError) String() string {
 	}
 
 	if len(e.Locations) > 0 {
-		return fmt.Sprintf("%s: %s", s, e.Message)
+		return fmt.Sprintf("(status:%d) %s: %s", e.Status, s, e.Message)
 	}
-	return e.Message
+	return fmt.Sprintf("(status:%d) %s", e.Status, e.Message)
 }
 
 type GraphqlErrors []GraphqlError

@@ -19,6 +19,7 @@ func TestGraphqlErrors(t *testing.T) {
 			name: "just 1 error",
 			err: GraphqlErrors{
 				{
+					Status:  411,
 					Message: "error-1",
 					Locations: []GraphqlErrLoc{
 						{
@@ -28,21 +29,23 @@ func TestGraphqlErrors(t *testing.T) {
 					},
 				},
 			},
-			expErrStr: "1:2: error-1",
+			expErrStr: "(status:411) 1:2: error-1",
 		},
 		{
 			name: "1 error without a location",
 			err: GraphqlErrors{
 				{
+					Status:  412,
 					Message: "error-1",
 				},
 			},
-			expErrStr: "error-1",
+			expErrStr: "(status:412) error-1",
 		},
 		{
 			name: "1 error, 2 locations",
 			err: GraphqlErrors{
 				{
+					Status:  413,
 					Message: "error-1",
 					Locations: []GraphqlErrLoc{
 						{
@@ -56,12 +59,13 @@ func TestGraphqlErrors(t *testing.T) {
 					},
 				},
 			},
-			expErrStr: "1:2,10:20: error-1",
+			expErrStr: "(status:413) 1:2,10:20: error-1",
 		},
 		{
 			name: "2 errors",
 			err: GraphqlErrors{
 				{
+					Status:  414,
 					Message: "error-1",
 					Locations: []GraphqlErrLoc{
 						{
@@ -71,6 +75,7 @@ func TestGraphqlErrors(t *testing.T) {
 					},
 				},
 				{
+					Status:  415,
 					Message: "error-2",
 					Locations: []GraphqlErrLoc{
 						{
@@ -84,7 +89,7 @@ func TestGraphqlErrors(t *testing.T) {
 					},
 				},
 			},
-			expErrStr: "[0] 1:2: error-1\n[1] 1:2,8:9: error-2\n",
+			expErrStr: "[0] (status:414) 1:2: error-1\n[1] (status:415) 1:2,8:9: error-2\n",
 		},
 	}
 
