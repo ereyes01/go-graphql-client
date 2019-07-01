@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	auth0grant "github.com/ereyes01/go-auth0-grant"
 	"github.com/pkg/errors"
 )
 
@@ -17,58 +16,55 @@ type GraphqlRequest struct {
 
 type GraphqlResponse struct {
 	Data   json.RawMessage `json:"data"`
-	Errors []GraphqlError  `json:"errors"`
+	Errors GraphqlErrors   `json:"errors"`
 }
 
-func DoGraphql(url string, gql *GraphqlRequest, grant *auth0grant.Grant) (*GraphqlResponse, error) {
-	var (
-		gqlResp     GraphqlResponse
-		accessToken string
-	)
+func (r *GraphqlResponse) Decode(dest interface{}) error {
+	return json.Unmarshal(r.Data, dest)
+}
 
-	if grant != nil {
-		var err error
+type GraphqlConn struct {
+	url    string
+	client *http.Client
+}
 
-		accessToken, err = grant.GetAccessToken()
-		if err != nil {
-			return nil, errors.Wrap(err, "get API access token")
-		}
+func NewGraphqlConn(url string, client *http.Client) *GraphqlConn {
+	return &GraphqlConn{
+		url:    url,
+		client: client,
 	}
+}
+
+func (c *GraphqlConn) Do(gql GraphqlRequest, headers map[string]string) (*GraphqlResponse, error) {
+	var gqlResp GraphqlResponse
 
 	payload, err := json.Marshal(gql)
 	if err != nil {
 		return nil, errors.Wrap(err, "json-marshal graphql request payload")
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	req, err := http.NewRequest("POST", c.url, bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, errors.Wrap(err, "create new request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	if accessToken != "" {
-		req.Header.Set("Authorization", "bearer "+accessToken)
+
+	client := c.client
+	if client == nil {
+		client = http.DefaultClient
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do http request")
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, errors.Errorf("response status: %s, body: %s", resp.Status, string(body))
-	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&gqlResp); err != nil {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return nil, errors.Wrapf(err, "decode gql, response body: %s", string(body))
 	}
 
-	if len(gqlResp.Errors) > 0 {
-		return nil, GraphqlErrors(gqlResp.Errors)
-	}
-
-	return &gqlResp, nil
+	return &gqlResp, gqlResp.Errors
 }
