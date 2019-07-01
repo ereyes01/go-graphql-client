@@ -30,22 +30,33 @@ type testCase struct {
 	request  GraphqlRequest
 	response *GraphqlResponse
 	expData  respData
+	headers  map[string]string
 }
 
 func (tc testCase) getHandler(t *testing.T) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t.Helper()
 
-		// verify headers
 		if r.Method != "POST" {
 			t.Fatalf("wrong method got: %s expected: POST", r.Method)
 		}
+
+		// verify headers
+		for name, value := range tc.headers {
+			if r.Header.Get(name) != value {
+				t.Fatalf("header ``%s'' value: got %s expected: %s", name, r.Header.Get(name), value)
+			}
+		}
+
 		mime := r.Header.Get("Content-Type")
-		if mime != "application/json" {
+		_, mimeOverride := tc.headers["Content-Type"]
+		if !mimeOverride && mime != "application/json" {
 			t.Fatalf("wrong mime type got: %s expected: application/json", mime)
 		}
+
 		accept := r.Header.Get("Accept")
-		if accept != "application/json" {
+		_, acceptOverride := tc.headers["Accept"]
+		if !acceptOverride && accept != "application/json" {
 			t.Fatalf("wrong accept type got: %s expected: application/json", accept)
 		}
 
@@ -114,6 +125,22 @@ func TestClient(t *testing.T) {
 			},
 			expData: respData{X: 1.0, Y: "tc1"},
 		},
+		{
+			name: "request with custom headers",
+			request: GraphqlRequest{
+				Query:     "query1",
+				Variables: map[string]interface{}{"x": 42.0},
+			},
+			response: &GraphqlResponse{
+				Data:   []byte(`{"_x_":1.0,"_y_":"tc1"}`),
+				Errors: nil,
+			},
+			expData: respData{X: 1.0, Y: "tc1"},
+			headers: map[string]string{
+				"Authorization": "bearer xyz",
+				"Accept":        "cake",
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -121,7 +148,7 @@ func TestClient(t *testing.T) {
 		defer tearDown(t)
 
 		conn := NewGraphqlConn(fixture.server.URL, nil)
-		resp, err := conn.Do(tc.request, nil)
+		resp, err := conn.Do(tc.request, tc.headers)
 		if !cmp.Equal(tc.response.Errors, err) {
 			t.Fatal("unexpected graphql error:", cmp.Diff(tc.response.Errors, err))
 		}

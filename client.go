@@ -47,8 +47,12 @@ func (c *GraphqlConn) Do(gql GraphqlRequest, headers map[string]string) (*Graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "create new request")
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	for name, value := range headers {
+		req.Header.Set(name, value)
+	}
 
 	client := c.client
 	if client == nil {
